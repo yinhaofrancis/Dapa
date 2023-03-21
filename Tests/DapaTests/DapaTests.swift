@@ -94,7 +94,7 @@ final class DapaTests: XCTestCase {
         let st:[MemberDisplay] = try MemberDisplay.query(condition: "domain2=89").query(db: db)
         let backup = try DatabaseBackup(name: "mmm", database: db)
         backup.backup()
-        
+        db.close()
         
     }
     
@@ -112,9 +112,14 @@ final class DapaTests: XCTestCase {
             }
             ctx.result(value: a.pointee)
         }))
-        let result = db.exec(sql: "select mm(domain) as P from Member")
-        print(result)
-        
+        self.measure {
+            
+            
+            let result = db.exec(sql: "select mm(domain),remark from Member")
+            
+            print(result)
+        }
+        db.close()
     }
 }
 
