@@ -45,7 +45,7 @@ final class DapaTests: XCTestCase {
         
         let db = try Database(name: "db",readonly: true)
         db.registerFunction(function: DatabaseFuntion(name: "go", nArg: 1,xFunc: { ctx, params in
-            sqlite3_result_int(ctx!.ctx, 89)
+            ctx.result(value: 89)
         }))
         
         
@@ -101,16 +101,16 @@ final class DapaTests: XCTestCase {
     func testMK() throws{
         let db = try Database(name: "db",readonly: true)
         db.registerFunction(function: DatabaseFuntion(name: "mm", nArg: 1,xStep: { ctx, param in
-            let a:UnsafeMutablePointer<Int64>? = ctx?.pointer()
-            let v:Int64 = param.first??.value() ?? 0
+            let a:UnsafeMutablePointer<Int64>? = ctx.pointer()
+            let v:Int64 = param.first?.value() ?? 0
             a?.pointee += v
             
         },xFinal: { ctx in
-            guard let a:UnsafeMutablePointer<Int64> = ctx?.pointer() else {
-                ctx?.result(value: 0)
+            guard let a:UnsafeMutablePointer<Int64> = ctx.pointer() else {
+                ctx.result(value: 0)
                 return
             }
-            ctx?.result(value: a.pointee)
+            ctx.result(value: a.pointee)
         }))
         let result = db.exec(sql: "select mm(domain) as P from Member")
         print(result)

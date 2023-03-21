@@ -486,7 +486,7 @@ extension Database{
         if function.xFunc != nil{
             sqlite3_create_function_v2(self.sqlite, function.name, function.nArg, SQLITE_UTF8, Unmanaged<DatabaseFuntion>.passRetained(function).toOpaque(), { ctx, n, params in
                 let df = Unmanaged<DatabaseFuntion>.fromOpaque(sqlite3_user_data(ctx))
-                df.takeUnretainedValue().xFunc?(FunctionContext(ctx: ctx),Database.makeParam(n: n, param: params))
+                df.takeUnretainedValue().xFunc?(FunctionContext(ctx: ctx!),Database.makeParam(n: n, param: params))
             }, nil, nil,{app in
                 guard let point = app else { return }
                 Unmanaged<DatabaseFuntion>.fromOpaque(point).release()
@@ -494,10 +494,10 @@ extension Database{
         }else{
             sqlite3_create_function_v2(self.sqlite, function.name, function.nArg, SQLITE_UTF8, Unmanaged<DatabaseFuntion>.passRetained(function).toOpaque(), nil, { ctx, n, params in
                 let df = Unmanaged<DatabaseFuntion>.fromOpaque(sqlite3_user_data(ctx))
-                df.takeUnretainedValue().xStep?(FunctionContext(ctx: ctx),Database.makeParam(n: n, param: params))
+                df.takeUnretainedValue().xStep?(FunctionContext(ctx: ctx!),Database.makeParam(n: n, param: params))
             },{ctx in
                 let df = Unmanaged<DatabaseFuntion>.fromOpaque(sqlite3_user_data(ctx))
-                df.takeUnretainedValue().xFinal?(FunctionContext(ctx: ctx))
+                df.takeUnretainedValue().xFinal?(FunctionContext(ctx: ctx!))
             },{app in
                 guard let point = app else { return }
                 Unmanaged<DatabaseFuntion>.fromOpaque(point).release()
@@ -505,11 +505,10 @@ extension Database{
         }
 
     }
-    private static func makeParam(n:Int32,param:UnsafeMutablePointer<OpaquePointer?>?)->[DatabaseValue?]{
-        var array:[DatabaseValue?] = []
+    private static func makeParam(n:Int32,param:UnsafeMutablePointer<OpaquePointer?>?)->[DatabaseValue]{
+        var array:[DatabaseValue] = []
         for i in 0 ..< n{
             guard let ptr = param?.advanced(by: Int(i)).pointee else {
-                array.append(nil)
                 continue
             }
             array.append(DatabaseValue(sqlValue: ptr))

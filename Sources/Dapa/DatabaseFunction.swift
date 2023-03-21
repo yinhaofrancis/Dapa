@@ -73,8 +73,8 @@ public class DatabaseFuntion{
         self.xFinal = xFinal
     }
     
-    public typealias FunctionCallback = (Database.FunctionContext?, [DatabaseValue?])->Void
-    public typealias FinalCallback = (Database.FunctionContext?)->Void
+    public typealias FunctionCallback = (Database.FunctionContext, [DatabaseValue])->Void
+    public typealias FinalCallback = (Database.FunctionContext)->Void
     
     
     public let name:String
@@ -87,13 +87,8 @@ public class DatabaseFuntion{
 extension Database{
     public struct FunctionContext{
         public let ctx:OpaquePointer
-        public init?(ctx: OpaquePointer?) {
-            if let ctx{
-                self.ctx = ctx
-            }else{
-                return nil
-            }
-            
+        public init(ctx: OpaquePointer) {
+            self.ctx = ctx
         }
         public func pointer<T>()->UnsafeMutablePointer<T>?{
             let p = sqlite3_aggregate_context(self.ctx, Int32(MemoryLayout<T>.size))
@@ -108,9 +103,9 @@ extension Database{
             }
             if T.self == Int.self{
                 if(MemoryLayout<Int>.size == 32){
-                    sqlite3_result_int(self.ctx, value as! Int32)
+                    sqlite3_result_int(self.ctx, Int32(value as! Int))
                 }else{
-                    sqlite3_result_int64(self.ctx, value as! Int64)
+                    sqlite3_result_int64(self.ctx, sqlite3_int64(value as! Int))
                 }
             }
             if T.self == Float.self{
