@@ -166,6 +166,17 @@ final class DapaTests: XCTestCase {
         
         db.close()
     }
+    func testMk() throws{
+        let db = try Database(name: "db")
+        db.exec(sql: """
+        CREATE VIRTUAL TABLE demo_index USING rtree(
+           id,              -- Integer primary key
+           minX, maxX,      -- Minimum and maximum X coordinate
+           minY, maxY       -- Minimum and maximum Y coordinate
+        );
+""")
+        
+    }
 }
 
 public struct Member:DapaModel{
