@@ -9,14 +9,15 @@ import Foundation
 import SQLite3
 
 
-public protocol DatabaseFunctionValue{}
-extension Int:DatabaseFunctionValue{}
-extension Int32:DatabaseFunctionValue{}
-extension Int64:DatabaseFunctionValue{}
-extension String:DatabaseFunctionValue{}
-extension Double:DatabaseFunctionValue{}
-extension Float:DatabaseFunctionValue{}
-extension Data:DatabaseFunctionValue{}
+/// 方法参数值
+public protocol DapaFunctionValue{}
+extension Int:DapaFunctionValue{}
+extension Int32:DapaFunctionValue{}
+extension Int64:DapaFunctionValue{}
+extension String:DapaFunctionValue{}
+extension Double:DapaFunctionValue{}
+extension Float:DapaFunctionValue{}
+extension Data:DapaFunctionValue{}
 
 public struct DatabaseValue{
     public let sqlValue:OpaquePointer
@@ -25,7 +26,9 @@ public struct DatabaseValue{
         self.sqlValue = sqlValue
     }
     
-    public func value<T:DatabaseFunctionValue>()->T{
+    /// 读取参数
+    /// - Returns: 参数值
+    public func value<T:DapaFunctionValue>()->T{
         if T.self == Int32.self{
             return sqlite3_value_int(self.sqlValue) as! T
         }
@@ -34,9 +37,9 @@ public struct DatabaseValue{
         }
         if T.self == Int.self{
             if(MemoryLayout<Int>.size == 32){
-                return sqlite3_value_int(self.sqlValue) as! T
+                return Int(sqlite3_value_int(self.sqlValue)) as! T
             }else{
-                return sqlite3_value_int64(self.sqlValue) as! T
+                return Int(sqlite3_value_int64(self.sqlValue)) as! T
             }
         }
         if T.self == Float.self{
@@ -59,41 +62,57 @@ public struct DatabaseValue{
     }
 }
 
-
-public class DatabaseFuntion{
-    public init(name: String,
-                  nArg: Int32,
-                  xFunc: DatabaseFuntion.FunctionCallback? = nil,
-                  xStep: DatabaseFuntion.FunctionCallback? = nil,
-                  xFinal: FinalCallback? = nil) {
-        self.name = name
-        self.nArg = nArg
-        self.xFunc = xFunc
-        self.xStep = xStep
-        self.xFinal = xFinal
+extension Dapa{
+    /// 数据库方法
+    public class Funtion{
+        /// 创建数据库方法 实现 xFunc 并且 xStep xFinal 为 scalar 方法 不会统计数据
+        ///  实现 xStep xFinal 并且 xFunc 为nil 为统计方法 类型 count() 方法
+        /// - Parameters:
+        ///   - name: 方法名
+        ///   - nArg: 参数个数
+        ///   - xFunc: scalar 方法
+        ///   - xStep: aggregate 方法
+        ///   - xStep: aggregate 结束方法
+        public init(name: String,
+                      nArg: Int32,
+                      xFunc: Funtion.FunctionCallback? = nil,
+                      xStep: Funtion.FunctionCallback? = nil,
+                      xFinal: FinalCallback? = nil) {
+            self.name = name
+            self.nArg = nArg
+            self.xFunc = xFunc
+            self.xStep = xStep
+            self.xFinal = xFinal
+        }
+        
+        public typealias FunctionCallback = (Dapa.FunctionContext, [DatabaseValue])->Void
+        public typealias FinalCallback = (Dapa.FunctionContext)->Void
+        
+        
+        public let name:String
+        public let nArg:Int32
+        public var xFunc:FunctionCallback?
+        public var xStep:FunctionCallback?
+        public let xFinal:FinalCallback?
     }
-    
-    public typealias FunctionCallback = (Database.FunctionContext, [DatabaseValue])->Void
-    public typealias FinalCallback = (Database.FunctionContext)->Void
-    
-    
-    public let name:String
-    public let nArg:Int32
-    public var xFunc:FunctionCallback?
-    public var xStep:FunctionCallback?
-    public let xFinal:FinalCallback?
 }
 
-extension Database{
+
+extension Dapa{
+    /// 方法上下文
     public struct FunctionContext{
         public let ctx:OpaquePointer
         public init(ctx: OpaquePointer) {
             self.ctx = ctx
         }
+        /// 统计方法获取统计的数据空间
+        /// - Returns: 数据指针 注意 swift 结构体数据修改后的变化
         public func pointer<T>()->UnsafeMutablePointer<T>?{
             let p = sqlite3_aggregate_context(self.ctx, Int32(MemoryLayout<T>.size))
             return p?.assumingMemoryBound(to: T.self)
         }
+        /// 方法返回值
+        /// - Parameter value: 返回数据 支持int32  int64 int Float double string data
         public func result<T>(value:T){
             if T.self == Int32.self{
                 sqlite3_result_int(self.ctx, value as! Int32)
