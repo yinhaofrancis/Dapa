@@ -98,6 +98,7 @@ extension Dapa{
 public protocol DapaResult{
     /// 结果字典，动态属性的值
     var model:Dictionary<String,Any> { get set}
+    
     init()
 }
 
@@ -197,7 +198,14 @@ public protocol DapaModel:DapaResult{
     static var declare:[Dapa.ColumeDeclare] { get }
     
 }
-
+extension DapaModel{
+    public static var hasPrimaryKey:Bool{
+        self.declare.filter{$0.primary}.count > 0
+    }
+    public static var auto:Bool {
+        return !self.hasPrimaryKey
+    }
+}
 extension DapaModel{
     /// 生成查询对象
     /// - Parameters:
@@ -211,7 +219,8 @@ extension DapaModel{
                               limit:UInt64? = nil,
                               offset:UInt64? = nil)->Dapa.Query{
         let sql = Dapa.Generator.Select(tableName: .init(table: .name(name: self.tableName)),
-                                           condition: condition,
+                                        queryRowId: self.auto,
+                                        condition: condition,
                                            orderBy: orderBy,
                                            limit: limit,
                                            offset: offset)
@@ -323,6 +332,10 @@ extension DapaModel{
     }
     /// 主键where 条件
     public var primaryCondition:String{
-        Self.declare.filter { $0.primary }.map{ $0.name + "=@" + $0.name }.joined(separator: " and ")
+        if(Self.auto){
+            return "rowid=@rowid"
+        }else{
+            return Self.declare.filter { $0.primary }.map{ $0.name + "=@" + $0.name }.joined(separator: " and ")
+        }
     }
 }

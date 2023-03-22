@@ -42,6 +42,20 @@ extension Dapa{
             super.init(value: wrappedValue, name: "", type: type, primary: primary, unique: unique, notNull: notNull)
         }
     }
+    @propertyWrapper
+    public class DapaRowId:Dapa.WrapColume{
+        public var wrappedValue: Int64{
+            get{
+                self.value as! Int64
+            }
+            set{
+                self.value = newValue
+            }
+        }
+        public init(wrappedValue: Int64){
+            super.init(value: wrappedValue, name: "rowid", type: .intDecType)
+        }
+    }
 }
 
 
@@ -79,7 +93,7 @@ public protocol DapaWrapModel:DapaModel{
 extension DapaWrapModel{
     public static var declare: [Dapa.ColumeDeclare]{
         Mirror(reflecting: Self()).children.filter { v in
-            v.value is Dapa.ColumeDeclare
+            v.value is Dapa.ColumeDeclare && (v.value as! Dapa.ColumeDeclare).name != "rowid"
         }.map { v in
             let s = v.value as! Dapa.WrapColume
             let l = v.label!

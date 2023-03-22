@@ -12,36 +12,11 @@ final class DapaTests: XCTestCase {
         MemberDisplay.View(db: db)
         MemberCanVisible.View(db: db)
     }
-    func testdsda() throws{
-        let db = try Dapa(name: "db")
-        Member.create(db: db)
-        MemberOnline.create(db: db)
-        MemberRelation.create(db: db)
-        MemberDisplay.View(db: db)
-        MemberCanVisible.View(db: db)
-        for i in 0 ..< 100{
-            var mem = Member()
-            mem.domain = "\(i)"
-            mem.username = "name \(i)"
-            mem.remark = "remark \(i)"
-            mem.avatar = "avatar \(i)"
-            try mem.insert(db: db)
-            
-            var onl = MemberOnline()
-            onl.domain = mem.domain
-            onl.online = (i % 2 == 0 ? 1 : 0)
-            try onl.insert(db: db)
-        }
-        for i in 0 ..< 100{
-            var rl = MemberRelation()
-            
-            rl.domain1 = "\(i)"
-            rl.domain2 = "\(Int.random(in: 0 ..< 100))"
-            try? rl.insert(db: db)
-        }
-    }
     func testInsert() throws{
         let db = try Dapa(name: "db")
+        let ob = Dapa.Observer(dapa: db) { ev, db, table, row in
+            print(ev,db,table,row)
+        }
         for i in 0 ..< 100{
             var mem = Member()
             mem.domain = "\(i)"
@@ -49,13 +24,14 @@ final class DapaTests: XCTestCase {
             mem.remark = "remark \(i)"
             mem.avatar = "avatar \(i)"
             try mem.insert(db: db)
-            
+            ob.close()
             var onl = MemberOnline()
             onl.domain = mem.domain
             onl.online = (i % 2 == 0 ? 1 : 0)
             try onl.insert(db: db)
         }
         db.close()
+        print(ob)
     }
     func testRelation() throws{
         let db = try Dapa(name: "db")
@@ -123,31 +99,15 @@ final class DapaTests: XCTestCase {
         let backup = try Dapa.Backup(name: "mmm", database: db)
         backup.backup()
         db.close()
-        
     }
     
     func testMK() throws{
-        let db = try Dapa(name: "db",readonly: true)
-        db.registerFunction(function: Dapa.Funtion(name: "mm", nArg: 1,xStep: { ctx, param in
-            let a:UnsafeMutablePointer<Int64>? = ctx.pointer()
-            let v:Int64 = param.first?.value() ?? 0
-            a?.pointee += v
-            
-        },xFinal: { ctx in
-            guard let a:UnsafeMutablePointer<Int64> = ctx.pointer() else {
-                ctx.result(value: 0)
-                return
-            }
-            ctx.result(value: a.pointee)
-        }))
-        self.measure {
-            
-            
-            let result = db.exec(sql: "select mm(domain),remark from Member")
-            
+        let queue = try DapaNormalQueue(name: "db")
+        queue.query { db in
+            let result = db.exec(sql: "select * from Member")
             print(result)
         }
-        db.close()
+        Thread.sleep(forTimeInterval: 10)
     }
     func testStatic () throws{
         let db = try Dapa(name: "db")
@@ -167,16 +127,23 @@ final class DapaTests: XCTestCase {
         db.close()
     }
     func testMk() throws{
-        let db = try Database(name: "db")
-        db.exec(sql: """
-        CREATE VIRTUAL TABLE demo_index USING rtree(
-           id,              -- Integer primary key
-           minX, maxX,      -- Minimum and maximum X coordinate
-           minY, maxY       -- Minimum and maximum Y coordinate
-        );
-""")
+        let db = try Dapa(name: "db")
+        TestRowId.create(db: db)
+        for i in 0 ..< 100{
+            let tr = TestRowId();
+            tr.domain = "dadads\(i)"
+            try tr.insert(db: db)
+        }
+        let trr:[TestRowId] = try TestRowId.select().query(db: db)
         
+        var rr = TestRowId();
+        rr.rowid = 99
+        try rr.sync(db: db)
+        rr.domain = "change 9999"
+        try rr.update(db: db)
+        print(rr)
     }
+    
 }
 
 public struct Member:DapaModel{
@@ -333,5 +300,20 @@ public struct MemberStatic:DapaWrapModel{
     public var remark:String = ""
     @Dapa.DapaColume(type: .textDecType)
     public var avatar:String = ""
+    
+}
+
+public struct TestRowId:DapaWrapModel{
+    public static var tableName: String{
+        "TestRowId"
+    }
+    
+    public init() {}
+    
+    @Dapa.DapaColume(type: .textDecType)
+    public var domain:String = ""
+    
+    @Dapa.DapaRowId
+    public var rowid:Int64 = 0
     
 }

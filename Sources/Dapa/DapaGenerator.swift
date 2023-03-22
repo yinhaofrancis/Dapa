@@ -68,13 +68,15 @@ extension Dapa.Generator{
         ///   - limit: 数据量
         ///   - offset: 偏移量
         public init(colume: [ResultColume] = [],
-                   tableName: Dapa.Generator.Select.JoinTable,
-                   condition: DatabaseCondition? = nil,
-                   groupBy: [String] = [],
-                   orderBy: [OrderBy] = [],
-                   limit: UInt64? = nil,
-                   offset: UInt64? = nil) {
+                    tableName: Dapa.Generator.Select.JoinTable,
+                    queryRowId:Bool = false,
+                    condition: DatabaseCondition? = nil,
+                    groupBy: [String] = [],
+                    orderBy: [OrderBy] = [],
+                    limit: UInt64? = nil,
+                    offset: UInt64? = nil) {
             self.colume = colume
+            self.queryRowId = queryRowId
             self.tableName = tableName
             self.condition = condition
             self.groupBy = groupBy
@@ -83,7 +85,7 @@ extension Dapa.Generator{
             self.offset = offset
         }
         public var sqlCode: String{
-            let c = colume.count > 0 ? colume.map{$0.description}.joined(separator: ",") : " * "
+            let c = colume.count > 0 ? colume.map{$0.description}.joined(separator: ",") : " *\(self.queryRowId ? " , rowid" : "") "
             let condition = self.condition != nil ? " WHERE " + self.condition!.sqlCode : ""
             let group = self.groupBy.count == 0 ? "" : " GROUP BY \(groupBy.joined(separator: ","))"
             let offset = offset == nil ? "" : " OFFSET " + offset!.description
@@ -94,6 +96,7 @@ extension Dapa.Generator{
         
         public var colume:[ResultColume] = []
         public var tableName:JoinTable
+        public var queryRowId:Bool
         public var condition:DatabaseCondition? = nil
         public var groupBy:[String] = []
         public var orderBy:[OrderBy] = []
