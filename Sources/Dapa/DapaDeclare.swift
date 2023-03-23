@@ -103,17 +103,20 @@ public protocol DapaResult{
 }
 
 extension DapaResult{
+    public subscript<T:Any>(dynamicMember dynamicMember:String)->T?{
+        get{
+            self.model[dynamicMember] as? T
+        }
+        set{
+            self.model[dynamicMember] = newValue
+        }
+    }
     public subscript(dynamicMember dynamicMember:String)->Any{
         get{
             self.model[dynamicMember] as Any
         }
         set{
             self.model[dynamicMember] = newValue
-        }
-    }
-    public subscript<T>(dynamicMember dynamicMember:String)->T?{
-        get{
-            self.model[dynamicMember] as? T
         }
     }
 }
@@ -214,7 +217,7 @@ extension DapaModel{
     ///   - limit: 数据量
     ///   - offset: 偏移量
     /// - Returns: 执行对象
-    public static func select(condition:Dapa.Generator.DatabaseCondition? = nil,
+    public static func select(condition:Dapa.Generator.Condition? = nil,
                               orderBy: [Dapa.Generator.OrderBy] = [],
                               limit:UInt64? = nil,
                               offset:UInt64? = nil)->Dapa.Query{
@@ -231,29 +234,35 @@ extension DapaModel{
     ///   - keyValues: 更新的列名和列值 列值支持数据参数 支持 @， ？等形式的参数
     ///   - condition: 条件
     /// - Returns: 执行对象
-    public static func update(keyValues:[String:String],condition:Dapa.Generator.DatabaseCondition? = nil)->Dapa.Query{
+    public static func update(keyValues:[String:String],condition:Dapa.Generator.Condition? = nil)->Dapa.Query{
         let sql = Dapa.Generator.Update(keyValue: keyValues, table: .name(name: self.tableName), condition: condition)
         return Dapa.Query(sql: sql)
     }
     /// 生成删除对象
     /// - Parameter condition: 条件
     /// - Returns: 执行对象
-    public static func delete(condition:Dapa.Generator.DatabaseCondition)->Dapa.Query{
+    public static func delete(condition:Dapa.Generator.Condition)->Dapa.Query{
         let sql = Dapa.Generator.Delete(table: .name(name: self.tableName), condition: condition)
         return Dapa.Query(sql: sql)
     }
     /// 生成插入对象
     /// - Parameter type: 插入方式
     /// - Returns: 执行对象
-    public func insert(type:Dapa.Generator.Insert.InsertType)->Dapa.Query{
-        let keys = self.model.keys
+    public static func insert(type:Dapa.Generator.Insert.InsertType,models:[Self],db:Dapa) throws{
+        guard let keys = models.first?.model.keys else { return }
         let sql = Dapa.Generator.Insert(insert: type, table: .name(name: Self.tableName), colume: keys.map{$0}, value:keys.map{"@"+$0})
-        return Dapa.Query(sql: sql)
+        let rs = try db.prepare(sql: sql.sqlCode)
+        for i in models{
+            rs.reset()
+            try rs.bind(model: i)
+            try rs.step()
+        }
+        rs.close()
     }
     /// 生成行数对象
     /// - Parameter condition: 条件
     /// - Returns: 执行对象
-    public static func count(condition:Dapa.Generator.DatabaseCondition? = nil)->Dapa.Query{
+    public static func count(condition:Dapa.Generator.Condition? = nil)->Dapa.Query{
         let sql = Dapa.Generator.Select(colume: [.colume(name: "COUNT(*) as count")],tableName: .init(table: .name(name: Self.tableName)),condition: condition)
         return Dapa.Query(sql: sql)
     }
@@ -303,7 +312,7 @@ extension DapaModel{
         let kv:[String:String] = self.model.keys.reduce(into: [:]) { partialResult, s in
             partialResult[s] = "@" + s
         }
-        let sql = Dapa.Generator.Update(keyValue: kv, table: .name(name: Self.tableName), condition: Dapa.Generator.DatabaseCondition(stringLiteral: self.primaryCondition))
+        let sql = Dapa.Generator.Update(keyValue: kv, table: .name(name: Self.tableName), condition: Dapa.Generator.Condition(stringLiteral: self.primaryCondition))
                                            
         let rs = try db.prepare(sql: sql.sqlCode)
         try rs.bind(model: self)
@@ -314,7 +323,7 @@ extension DapaModel{
     /// - Parameter db: 数据库
     public func delete(db:Dapa) throws {
  
-        let sql = Dapa.Generator.Delete(table: .name(name: Self.tableName), condition: Dapa.Generator.DatabaseCondition(stringLiteral: self.primaryCondition))
+        let sql = Dapa.Generator.Delete(table: .name(name: Self.tableName), condition: Dapa.Generator.Condition(stringLiteral: self.primaryCondition))
         let rs = try db.prepare(sql: sql.sqlCode)
         try rs.bind(model: self)
         _ = try rs.step()
@@ -323,12 +332,29 @@ extension DapaModel{
     /// 同步 查找数据并更新对象 需要主键
     /// - Parameter db: 数据库
     public mutating func sync(db:Dapa) throws {
-        let sql = Dapa.Generator.Select(tableName: .init(table: .name(name: Self.tableName)),condition: Dapa.Generator.DatabaseCondition(stringLiteral: self.primaryCondition))
+        let sql = Dapa.Generator.Select(
+            tableName: .init(table: .name(name: Self.tableName)),
+            queryRowId: Self.auto,
+            condition: Dapa.Generator.Condition(stringLiteral: self.primaryCondition))
         let rs = try db.prepare(sql: sql.sqlCode)
         try rs.bind(model: self)
         try rs.step()
         rs.colume(model: &self)
         rs.close()
+    }
+    
+    /// 删除表
+    /// - Parameter db: 数据库
+    public static func drop(db:Dapa){
+        db.exec(sql: "DROP TABLE \(Self.tableName)")
+    }
+    
+    
+    /// 表存在
+    /// - Parameter db: 数据库
+    /// - Returns: 存在状态
+    public static func exist(db:Dapa) throws ->Bool{
+        return try db.tableExist(name: self.tableName)
     }
     /// 主键where 条件
     public var primaryCondition:String{

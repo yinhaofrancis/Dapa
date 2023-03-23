@@ -46,7 +46,7 @@ import SQLite3.Ext
     }))
  
  
-    let condition = Dapa.Generator.DatabaseCondition(stringLiteral: "MemberOnline.domain == Member.domain").and(condition: "MemberRelation.domain2 = @user2") .and(condition: "Member.domain = MemberRelation.domain1")
+    let condition = Dapa.Generator.Condition(stringLiteral: "MemberOnline.domain == Member.domain").and(condition: "MemberRelation.domain2 = @user2") .and(condition: "Member.domain = MemberRelation.domain1")
     let user:[MemberStaticDisplay] = try MemberStaticDisplay.query(condition: condition,groupBy: ["domain1"]).query(db: db,param: ["@user2":10])
     // 执行的sql SELECT MemberOnline.domain,username,remark,avatar,online from Member  JOIN MemberOnline  JOIN MemberRelation WHERE MemberOnline.domain == Member.domain and (MemberRelation.domain2 = @user2) and (Member.domain = MemberRelation.domain1) GROUP BY domain1
     //user2 = 10
@@ -202,6 +202,12 @@ public struct Dapa:Hashable{
             self.sqlite = sqlite
             self.stmt = stmt
         }
+        
+        /// 重置
+        public func reset(){
+            sqlite3_reset(self.stmt)
+        }
+        
         // MARK: result set api
         /// 获取bind 参数的 下标
         /// - Parameter name: 参数名称 eg @abc,
@@ -353,27 +359,35 @@ public struct Dapa:Hashable{
         ///   - index: 下标
         ///   - type: 类型
         /// - Returns: 数据
-        public func colume<T>(index:Int32,type:CollumnDecType)->T{
+        public func colume<T>(index:Int32,type:CollumnDecType)->T?{
+            let storeType = self.columeType(index: index)
+            if(storeType == .nullCollumn){
+                return nil
+            }
             switch type{
             case .intDecType:
-                return self.columeInt(index: index) as! T
+                return self.columeInt(index: index) as? T
             case .doubleDecType:
-                return self.columeDouble(index: index) as! T
+                return self.columeDouble(index: index) as? T
             case .textDecType:
-                return self.columeString(index: index) as! T
+                return self.columeString(index: index) as? T
             case .dataDecType:
-                return self.columeData(index: index) as! T
+                return self.columeData(index: index) as? T
             case .jsonDecType:
-                return self.columeData(index: index) as! T
+                return self.columeData(index: index) as? T
             case .dateDecType:
-                return self.columeDate(index: index) as! T
+                return self.columeDate(index: index) as? T
             }
         }
         /// 读取列
         /// - Parameter index: 下标
         /// - Returns: 数据
-        public func colume(index:Int32)->Any{
+        public func colume(index:Int32)->Any?{
             let type = self.columeDecType(index: index)
+            let storeType = self.columeType(index: index)
+            if(storeType == .nullCollumn){
+                return nil
+            }
             switch type{
             case .intDecType:
                 return self.columeInt(index: index)
@@ -385,34 +399,12 @@ public struct Dapa:Hashable{
                 return self.columeData(index: index)
             case .jsonDecType:
                 let data =  self.columeData(index: index)
-                return (try? JSONSerialization.jsonObject(with: data)) ?? data
+                guard let js = try? JSONSerialization.jsonObject(with: data) else { return nil }
+                return js as Any
             case .dateDecType:
                 return self.columeDate(index: index)
             case .none:
                 return self.columeString(index: index)
-            }
-        }
-
-        public func colume<T:Codable>(index:Int32,valueType:T.Type)->Codable{
-            let type:CollumnDecType = self.columeDecType(index: index) ?? .textDecType
-            switch type{
-            case .intDecType:
-                return self.columeInt(index: index)
-            case .doubleDecType:
-                return self.columeDouble(index: index)
-            case .textDecType:
-                return self.columeString(index: index)
-            case .dataDecType:
-                return self.columeData(index: index)
-            case .jsonDecType:
-                let a = self.columeData(index: index)
-                do{
-                    return try DapaJsonDecoder.decode(valueType, from: a)
-                }catch{
-                    return a
-                }
-            case .dateDecType:
-                return self.columeDate(index: index)
             }
         }
         
@@ -667,13 +659,13 @@ extension Dapa{
         }
 
     }
-    private static func makeParam(n:Int32,param:UnsafeMutablePointer<OpaquePointer?>?)->[DatabaseValue]{
-        var array:[DatabaseValue] = []
+    private static func makeParam(n:Int32,param:UnsafeMutablePointer<OpaquePointer?>?)->[Dapa.Value]{
+        var array:[Dapa.Value] = []
         for i in 0 ..< n{
             guard let ptr = param?.advanced(by: Int(i)).pointee else {
                 continue
             }
-            array.append(DatabaseValue(sqlValue: ptr))
+            array.append(Dapa.Value(sqlValue: ptr))
         }
         return array
     }

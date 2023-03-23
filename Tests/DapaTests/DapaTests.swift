@@ -53,7 +53,7 @@ final class DapaTests: XCTestCase {
         }))
         
         
-        let condition = Dapa.Generator.DatabaseCondition(stringLiteral: "MemberOnline.domain == Member.domain").and(condition: "MemberRelation.domain2 = @user2") .and(condition: "Member.domain = MemberRelation.domain1")
+        let condition = Dapa.Generator.Condition(stringLiteral: "MemberOnline.domain == Member.domain").and(condition: "MemberRelation.domain2 = @user2") .and(condition: "Member.domain = MemberRelation.domain1")
         let user:[MemberStaticDisplay] = try MemberStaticDisplay.query(condition: condition,groupBy: ["domain1"]).query(db: db,param: ["@user2":10])
         
 //        let st:[MemberDisplay] = try MemberDisplay.select(db: db,condtion: "domain2=89")
@@ -91,7 +91,7 @@ final class DapaTests: XCTestCase {
             rl.domain2 = "\(Int.random(in: 0 ..< 100))"
             try? rl.insert(db: db)
         }
-        let condition = Dapa.Generator.DatabaseCondition(stringLiteral: "MemberOnline.domain == Member.domain").and(condition: "MemberRelation.domain2 = 89") .and(condition: "Member.domain = MemberRelation.domain1")
+        let condition = Dapa.Generator.Condition(stringLiteral: "MemberOnline.domain == Member.domain").and(condition: "MemberRelation.domain2 = 89") .and(condition: "Member.domain = MemberRelation.domain1")
         let user:[MemberStaticDisplay] = try MemberStaticDisplay.query(condition: condition,groupBy: ["domain1"]).query(db: db)
         
 //        let st:[MemberDisplay] = try MemberDisplay.select(db: db,condtion: "domain2=89")
@@ -205,9 +205,9 @@ public struct MemberDisplay:DapaViewModel{
         Dapa.Generator.ItemName.name(name: "MemberDisplay")
     }
 
-    public static var condition: Dapa.Generator.DatabaseCondition?{
+    public static var condition: Dapa.Generator.Condition?{
         
-        return Dapa.Generator.DatabaseCondition(stringLiteral: "MemberOnline.domain == Member.domain").and(condition: "MemberRelation.domain2 = 89") .and(condition: "Member.domain = MemberRelation.domain1")
+        return Dapa.Generator.Condition(stringLiteral: "MemberOnline.domain == Member.domain").and(condition: "MemberRelation.domain2 = 89") .and(condition: "Member.domain = MemberRelation.domain1")
     }
     
     public init() {
@@ -238,9 +238,9 @@ public struct MemberCanVisible:DapaViewModel{
         Dapa.Generator.ItemName.name(name: "MemberCanVisible")
     }
     
-    public static var condition: Dapa.Generator.DatabaseCondition?{
+    public static var condition: Dapa.Generator.Condition?{
         
-        return Dapa.Generator.DatabaseCondition(stringLiteral: "MemberOnline.domain = Member.domain").and(condition: "MemberOnline.online = 1")
+        return Dapa.Generator.Condition(stringLiteral: "MemberOnline.domain = Member.domain").and(condition: "MemberOnline.online = 1")
     }
     
     public init() {

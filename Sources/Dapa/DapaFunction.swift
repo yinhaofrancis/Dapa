@@ -18,49 +18,51 @@ extension String:DapaFunctionValue{}
 extension Double:DapaFunctionValue{}
 extension Float:DapaFunctionValue{}
 extension Data:DapaFunctionValue{}
-
-public struct DatabaseValue{
-    public let sqlValue:OpaquePointer
-    
-    public init(sqlValue:OpaquePointer){
-        self.sqlValue = sqlValue
-    }
-    
-    /// 读取参数
-    /// - Returns: 参数值
-    public func value<T:DapaFunctionValue>()->T{
-        if T.self == Int32.self{
-            return sqlite3_value_int(self.sqlValue) as! T
+extension Dapa{
+    public struct Value{
+        public let sqlValue:OpaquePointer
+        
+        public init(sqlValue:OpaquePointer){
+            self.sqlValue = sqlValue
         }
-        if T.self == Int64.self{
-            return sqlite3_value_int64(self.sqlValue) as! T
-        }
-        if T.self == Int.self{
-            if(MemoryLayout<Int>.size == 32){
-                return Int(sqlite3_value_int(self.sqlValue)) as! T
-            }else{
-                return Int(sqlite3_value_int64(self.sqlValue)) as! T
+        
+        /// 读取参数
+        /// - Returns: 参数值
+        public func value<T:DapaFunctionValue>()->T{
+            if T.self == Int32.self{
+                return sqlite3_value_int(self.sqlValue) as! T
             }
+            if T.self == Int64.self{
+                return sqlite3_value_int64(self.sqlValue) as! T
+            }
+            if T.self == Int.self{
+                if(MemoryLayout<Int>.size == 32){
+                    return Int(sqlite3_value_int(self.sqlValue)) as! T
+                }else{
+                    return Int(sqlite3_value_int64(self.sqlValue)) as! T
+                }
+            }
+            if T.self == Float.self{
+                return Float(sqlite3_value_double(self.sqlValue)) as! T
+            }
+            if T.self == Double.self{
+                return sqlite3_value_double(self.sqlValue) as! T
+            }
+            if T.self == String.self{
+                guard let p = sqlite3_value_text(self.sqlValue) else { return "" as! T }
+                let c = sqlite3_value_bytes(self.sqlValue)
+                return String(data: Data(bytes: p, count: Int(c)), encoding: .utf8) as! T
+            }
+            if T.self == Data.self{
+                guard let p = sqlite3_value_text(self.sqlValue) else { return "" as! T }
+                let c = sqlite3_value_bytes(self.sqlValue)
+                return Data(bytes: p, count: Int(c)) as! T
+            }
+            return 0 as! T
         }
-        if T.self == Float.self{
-            return Float(sqlite3_value_double(self.sqlValue)) as! T
-        }
-        if T.self == Double.self{
-            return sqlite3_value_double(self.sqlValue) as! T
-        }
-        if T.self == String.self{
-            guard let p = sqlite3_value_text(self.sqlValue) else { return "" as! T }
-            let c = sqlite3_value_bytes(self.sqlValue)
-            return String(data: Data(bytes: p, count: Int(c)), encoding: .utf8) as! T
-        }
-        if T.self == Data.self{
-            guard let p = sqlite3_value_text(self.sqlValue) else { return "" as! T }
-            let c = sqlite3_value_bytes(self.sqlValue)
-            return Data(bytes: p, count: Int(c)) as! T
-        }
-        return 0 as! T
     }
 }
+
 
 extension Dapa{
     /// 数据库方法
@@ -85,7 +87,7 @@ extension Dapa{
             self.xFinal = xFinal
         }
         
-        public typealias FunctionCallback = (Dapa.FunctionContext, [DatabaseValue])->Void
+        public typealias FunctionCallback = (Dapa.FunctionContext, [Dapa.Value])->Void
         public typealias FinalCallback = (Dapa.FunctionContext)->Void
         
         

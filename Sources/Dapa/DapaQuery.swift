@@ -93,7 +93,7 @@ extension DapaQueryModel{
     ///   - limit: 数据量
     ///   - offset: 偏移量
     /// - Returns: 结果
-    public static func query(condition:Dapa.Generator.DatabaseCondition? = nil,
+    public static func query(condition:Dapa.Generator.Condition? = nil,
                              groupBy:[String] = [],
                              orderBy: [Dapa.Generator.OrderBy] = [],
                              limit:UInt64? = nil,
@@ -112,7 +112,7 @@ extension DapaQueryModel{
     ///   - limit: 数据量
     ///   - offset: 偏移量
     /// - Returns: 查询语句
-    public static func select(condition:Dapa.Generator.DatabaseCondition? = nil,
+    public static func select(condition:Dapa.Generator.Condition? = nil,
                              groupBy:[String] = [],
                              orderBy: [Dapa.Generator.OrderBy] = [],
                              limit:UInt64? = nil,
@@ -133,7 +133,7 @@ extension DapaQueryModel{
     ///   - offset: 偏移量
     public static func createView(db:Dapa,
                             viewName:Dapa.Generator.ItemName,
-                            condition:Dapa.Generator.DatabaseCondition? = nil,
+                            condition:Dapa.Generator.Condition? = nil,
                             groupBy:[String] = [],
                             orderBy: [Dapa.Generator.OrderBy] = [],
                             limit:UInt64? = nil,
@@ -158,9 +158,9 @@ extension DapaQueryModel{
          Dapa.Generator.ItemName.name(name: "MemberCanVisible")
      }
      
-     public static var condition: Dapa.Generator.DatabaseCondition?{
+     public static var condition: Dapa.Generator.Condition?{
          
-         return Dapa.Generator.DatabaseCondition(stringLiteral: "MemberOnline.domain = Member.domain").and(condition: "MemberOnline.online = 1")
+         return Dapa.Generator.Condition(stringLiteral: "MemberOnline.domain = Member.domain").and(condition: "MemberOnline.online = 1")
      }
      
      public init() {
@@ -191,7 +191,7 @@ public protocol DapaViewModel:DapaQueryModel{
     /// 视图名
     static var view:Dapa.Generator.ItemName { get }
     /// 条件
-    static var condition: Dapa.Generator.DatabaseCondition? { get }
+    static var condition: Dapa.Generator.Condition? { get }
     /// 分组
     static var groupBy:[String] { get }
 }
@@ -218,7 +218,7 @@ extension DapaViewModel{
     ///   - limit: 数据量
     ///   - offset: 偏移量
     /// - Returns: 查询对象
-    public static func query(condition:Dapa.Generator.DatabaseCondition? = nil,
+    public static func query(condition:Dapa.Generator.Condition? = nil,
                              groupBy:[String] = [],
                              orderBy: [Dapa.Generator.OrderBy] = [],
                              limit:UInt64? = nil,

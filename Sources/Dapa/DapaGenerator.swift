@@ -70,7 +70,7 @@ extension Dapa.Generator{
         public init(colume: [ResultColume] = [],
                     tableName: Dapa.Generator.Select.JoinTable,
                     queryRowId:Bool = false,
-                    condition: DatabaseCondition? = nil,
+                    condition: Condition? = nil,
                     groupBy: [String] = [],
                     orderBy: [OrderBy] = [],
                     limit: UInt64? = nil,
@@ -97,7 +97,7 @@ extension Dapa.Generator{
         public var colume:[ResultColume] = []
         public var tableName:JoinTable
         public var queryRowId:Bool
-        public var condition:DatabaseCondition? = nil
+        public var condition:Condition? = nil
         public var groupBy:[String] = []
         public var orderBy:[OrderBy] = []
         public var limit:UInt64? = nil
@@ -246,13 +246,13 @@ extension Dapa.Generator {
         }
         
         public var table:ItemName
-        public var condition:DatabaseCondition
+        public var condition:Condition
         
         /// 创建删除
         /// - Parameters:
         ///   - table: 表名
         ///   - condition: 条件
-        public init(table: ItemName, condition:DatabaseCondition) {
+        public init(table: ItemName, condition:Condition) {
             self.table = table
             self.condition = condition
         }
@@ -268,7 +268,7 @@ extension Dapa.Generator {
         ///   - condition: 条件
         public init(keyValue: [String : String],
                     table: Dapa.Generator.ItemName,
-                    condition: DatabaseCondition? = nil) {
+                    condition: Condition? = nil) {
             self.keyValue = keyValue
             self.table = table
             self.condition = condition
@@ -280,7 +280,7 @@ extension Dapa.Generator {
         
         public var keyValue:[String:String]
         public var table:ItemName
-        public var condition:DatabaseCondition?
+        public var condition:Condition?
         
     }
 }
@@ -301,7 +301,7 @@ extension Dapa.Generator {
                     indexName: ItemName,
                     tableName:String,
                     columes: [String],
-                    condition:DatabaseCondition? = nil) {
+                    condition:Condition? = nil) {
             self.isUnique = isUnique
             self.ifNotExists = ifNotExists
             self.indexName = indexName
@@ -320,7 +320,7 @@ extension Dapa.Generator {
         
         public var columes:[String]
         
-        public var condition:DatabaseCondition?
+        public var condition:Condition?
         
         public var sqlCode:String{
             let code = "CREATE \( isUnique ? "UNIQUE" : "") INDEX \(ifNotExists ? "IF NOT EXISTS" : "") \(indexName) ON \(tableName) (\(columes.joined(separator: ",")))" + (condition == nil ? "" : " WHERE " + condition!.sqlCode)
@@ -361,7 +361,7 @@ extension Dapa.Generator{
 
 extension Dapa.Generator{
     /// 查询条件
-    public struct DatabaseCondition:DapaExpress,CustomStringConvertible,ExpressibleByStringLiteral{
+    public struct Condition:DapaExpress,CustomStringConvertible,ExpressibleByStringLiteral{
         public typealias StringLiteralType = String
         
         public var sqlCode: String
@@ -373,21 +373,21 @@ extension Dapa.Generator{
         /// in
         /// - Parameter select: 查询语句
         /// - Returns: 条件
-        public func `in`(select:Dapa.Generator.Select)->DatabaseCondition{
+        public func `in`(select:Dapa.Generator.Select)->Condition{
             
-            return DatabaseCondition(stringLiteral: sqlCode + " in (\(select.sqlCode)) ")
+            return Condition(stringLiteral: sqlCode + " in (\(select.sqlCode)) ")
         }
         /// and 语句
         /// - Parameter condition:  条件对象
         /// - Returns: 条件对象
-        public func and(condition: DatabaseCondition)->DatabaseCondition{
-            DatabaseCondition(stringLiteral: self.sqlCode + " and " + "(\(condition.sqlCode))")
+        public func and(condition: Condition)->Condition{
+            Condition(stringLiteral: self.sqlCode + " and " + "(\(condition.sqlCode))")
         }
         /// or 语句
         /// - Parameter condition: 条件对象
         /// - Returns: 条件对象
-        public func or(condition: DatabaseCondition)->DatabaseCondition{
-            DatabaseCondition(stringLiteral: self.sqlCode + " or " + "(\(condition.sqlCode))")
+        public func or(condition: Condition)->Condition{
+            Condition(stringLiteral: self.sqlCode + " or " + "(\(condition.sqlCode))")
         }
         public var description: String{
             return self.sqlCode
