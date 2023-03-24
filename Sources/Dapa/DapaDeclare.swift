@@ -355,6 +355,12 @@ extension DapaModel{
     public static func exist(db:Dapa) throws ->Bool{
         return try db.tableExist(name: self.tableName)
     }
+    public static func queryById(rowid:Int64,db:Dapa)throws->Self?{
+        let jt = Dapa.Generator.Select.JoinTable(table: .name(name: self.tableName))
+        let sql = Dapa.Generator.Select(tableName: jt,condition: "rowid = @rd")
+        let out:Self? = try Dapa.Query(sql: sql).query(db: db,param: ["@rd":rowid]).first
+        return out
+    }
     /// 主键where 条件
     public var primaryCondition:String{
         if(Self.auto){

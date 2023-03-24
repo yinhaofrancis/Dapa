@@ -11,6 +11,7 @@ import Dapa
 
 final public class DynamicModelTest:XCTestCase{
     public var db:Dapa = try! Dapa(name: "db")
+    
     public override func setUp() {
         super.setUp()
         TestModel.drop(db: self.db)
@@ -118,6 +119,9 @@ final public class DynamicModelTest:XCTestCase{
 
 final class testQuery:XCTestCase{
     public var db:Dapa = try! Dapa(name: "db")
+    public lazy var pool:Dapa.ModelPool = {
+        Dapa.ModelPool<TestModelPrimaryKey>(db: self.db)
+    }()
     override func setUp() {
         super.setUp()
         TestModelPrimaryKey.drop(db: self.db)
@@ -163,6 +167,8 @@ final class testQuery:XCTestCase{
         XCTAssert(r.first?.count == 1000)
     }
     func testInsert() throws{
+        let pool = self.pool
+        print(pool)
         try TestModelPrimaryKey.delete(condition: "testInt < 100000").exec(db: self.db)
         let a = (0 ..< 1000).map { i in
             var t = TestModelPrimaryKey()
@@ -175,8 +181,8 @@ final class testQuery:XCTestCase{
             return t
         }
         try TestModelPrimaryKey.insert(type: .insert, models: a, db: self.db)
+        print(pool)
     }
-    
     deinit{
         self.db.close()
     }

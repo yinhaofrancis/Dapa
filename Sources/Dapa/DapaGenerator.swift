@@ -111,7 +111,14 @@ extension Dapa.Generator{
             case innerJoin = " INNER JOIN "
         }
         /// 表名用查询 支持连表
-        public struct JoinTable{
+        public struct JoinTable:ExpressibleByStringLiteral{
+            
+            public init(stringLiteral value: String) {
+                self.table = value
+            }
+            
+            public typealias StringLiteralType = String
+            
             public var table:String
             /// 创建表
             /// - Parameter table: 表名

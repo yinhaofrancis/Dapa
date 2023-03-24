@@ -10,6 +10,7 @@ let package = Package(
         // Products define the executables and libraries a package produces, and make them visible to other packages.
         .library(
             name: "Dapa",
+            type: .dynamic,
             targets: ["Dapa"]),
     ],
     dependencies: [
@@ -24,6 +25,6 @@ let package = Package(
             dependencies: []),
         .testTarget(
             name: "DapaTests",
-            dependencies: ["Dapa"]),
+            dependencies: ["Dapa"])
     ]
 )
