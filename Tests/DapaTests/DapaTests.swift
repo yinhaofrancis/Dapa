@@ -3,13 +3,17 @@ import XCTest
 import SQLite3
 
 final class DapaTests: XCTestCase {
-    
     func testCreate() throws {
         let db = try Dapa(name: "db")
+        Member.drop(db: db)
         Member.create(db: db)
+        MemberOnline.drop(db: db)
         MemberOnline.create(db: db)
+        MemberRelation.drop(db: db)
         MemberRelation.create(db: db)
+        MemberDisplay.drop(db: db)
         MemberDisplay.View(db: db)
+        MemberCanVisible.drop(db: db)
         MemberCanVisible.View(db: db)
     }
     func testInsert() throws{

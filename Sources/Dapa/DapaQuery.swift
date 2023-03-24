@@ -20,31 +20,52 @@ extension Dapa{
         ///   - param: 参数  数据可以是@参数
         /// - Returns: 结果集合
         public func query<T:DapaResult>(db:Dapa,param:[String:Any] = [:]) throws ->[T] {
-            let rs = try db.prepare(sql: self.sql.sqlCode)
-            var results:[T] = []
-            for i in param{
-                try rs.bind(name: i.key, value: i.value)
+            return try self.query(db: db) { rs in
+                var results:[T] = []
+                for i in param{
+                    try rs.bind(name: i.key, value: i.value)
+                }
+                while try rs.step() == .hasColumn {
+                    var result = T()
+                    rs.colume(model: &result)
+                    results.append(result)
+                }
+                return results
             }
-            while try rs.step() == .hasColumn {
-                var result = T()
-                rs.colume(model: &result)
-                results.append(result)
-            }
-            rs.close()
-            return results
         }
         /// 执行
         /// - Parameters:
         ///   - db: 数据库
         ///   - param: 参数 数据可以是@参数
         public func exec(db:Dapa,param:[String:Any] = [:]) throws {
-            let rs = try db.prepare(sql: self.sql.sqlCode)
-            for i in param{
-                try rs.bind(name: i.key, value: i.value)
+            try self.exec(db: db) { rs in
+                for i in param{
+                    try rs.bind(name: i.key, value: i.value)
+                }
+                try rs.step()
             }
-            try rs.step()
+        }
+        /// 执行查询
+        /// - Parameters:
+        ///   - db: 数据库
+        ///   - dataCallback:数据执行回调
+        public func exec(db:Dapa,dataCallback:(ResultSet)throws->Void) throws {
+            let rs = try db.prepare(sql: self.sql.sqlCode)
+            try dataCallback(rs)
             rs.close()
         }
+        /// 执行查询
+        /// - Parameters:
+        ///   - db: 数据库
+        ///   - dataCallback:数据执行回调
+        public func query<T:DapaResult>(db:Dapa,dataCallback:(ResultSet)throws->[T]) throws->[T] {
+            let rs = try db.prepare(sql: self.sql.sqlCode)
+            defer{
+                rs.close()
+            }
+            return try dataCallback(rs)
+        }
+        
     }
 }
 
@@ -208,6 +229,10 @@ extension DapaViewModel{
                             limit:UInt64? = nil,
                             offset:UInt64? = nil){
         db.exec(sql: Dapa.Generator.View(viewName: self.view, select: self.select(condition: condition, groupBy: groupBy, orderBy: orderBy, limit: limit, offset: offset)).sqlCode)
+        
+    }
+    public static func drop(db:Dapa){
+        db.exec(sql: "drop view \(Self.view.description)")
         
     }
     /// 创建查询

@@ -137,10 +137,10 @@ final class testQuery:XCTestCase{
     
     func testSelect() throws{
         let a:[TestModelPrimaryKey] = try TestModelPrimaryKey.select().query(db: self.db)
-        XCTAssert(a.count == 100)
+        XCTAssert(a.count == 1000)
         let condition = Dapa.Generator.Condition(stringLiteral: "testInt == 1").or(condition: "testInt > 99")
         let b:[TestModelPrimaryKey] = try TestModelPrimaryKey.select(condition:condition).query(db: self.db)
-        XCTAssert(b.count == 1)
+        XCTAssert(b.count == 901)
         
         let c:[TestModelPrimaryKey] = try TestModelPrimaryKey.select(condition:"testInt < 10",orderBy: [.init(colume: "testInt", asc: false)]).query(db: self.db)
         XCTAssert(c.count == 10)
@@ -160,7 +160,7 @@ final class testQuery:XCTestCase{
             XCTAssert(i.testString == v)
         }
         let r: [Dapa.ResultModel] = try TestModelPrimaryKey.count().query(db: self.db)
-        XCTAssert(r.first?.count == 100)
+        XCTAssert(r.first?.count == 1000)
     }
     func testInsert() throws{
         try TestModelPrimaryKey.delete(condition: "testInt < 100000").exec(db: self.db)
