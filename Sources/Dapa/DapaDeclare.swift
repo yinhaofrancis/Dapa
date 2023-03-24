@@ -284,25 +284,30 @@ extension DapaModel{
         let sql = Dapa.Generator.Index(indexName: .name(name: index), tableName: Self.tableName, columes: [withColumn])
         db.exec(sql: sql.sqlCode)
     }
+    /// sql 执行
+    /// - Parameters:
+    ///   - sql: 表达式
+    ///   - db: 数据库
+    public func DapaExpressExec(sql: DapaExpress, db: Dapa) throws {
+        try Dapa.Query(sql: sql).exec(db: db) { rs in
+            try rs.bind(model: self)
+            try rs.step()
+        }
+    }
+    
     /// 模型插入
     /// - Parameter db: 数据库
     public func insert(db:Dapa) throws {
         let col = Self.declare.map{$0.name}
         let sql = Dapa.Generator.Insert(insert: .insert, table: .name(name: Self.tableName), colume:col , value: col.map { "@" + $0 })
-        let rs = try db.prepare(sql: sql.sqlCode)
-        try rs.bind(model: self)
-        _ = try rs.step()
-        rs.close()
+        try DapaExpressExec(sql: sql, db: db)
     }
     /// 取代模型
     /// - Parameter db: 数据
     public func replace(db:Dapa) throws {
         let col = Self.declare.map{$0.name}
         let sql = Dapa.Generator.Insert(insert: .insertReplace, table: .name(name: Self.tableName), colume:col , value: col.map { "@" + $0 })
-        let rs = try db.prepare(sql: sql.sqlCode)
-        try rs.bind(model: self)
-        try rs.step()
-        rs.close()
+        try self.DapaExpressExec(sql: sql, db: db)
     }
     
     /// 更新模型 需要主键
@@ -314,20 +319,14 @@ extension DapaModel{
         }
         let sql = Dapa.Generator.Update(keyValue: kv, table: .name(name: Self.tableName), condition: Dapa.Generator.Condition(stringLiteral: self.primaryCondition))
                                            
-        let rs = try db.prepare(sql: sql.sqlCode)
-        try rs.bind(model: self)
-        try rs.step()
-        rs.close()
+        try self.DapaExpressExec(sql: sql, db: db)
     }
     /// 删除 需要主键
     /// - Parameter db: 数据库
     public func delete(db:Dapa) throws {
  
         let sql = Dapa.Generator.Delete(table: .name(name: Self.tableName), condition: Dapa.Generator.Condition(stringLiteral: self.primaryCondition))
-        let rs = try db.prepare(sql: sql.sqlCode)
-        try rs.bind(model: self)
-        _ = try rs.step()
-        rs.close()
+        try self.DapaExpressExec(sql: sql, db: db)
     }
     /// 同步 查找数据并更新对象 需要主键
     /// - Parameter db: 数据库
