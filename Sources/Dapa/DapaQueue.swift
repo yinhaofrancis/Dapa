@@ -7,22 +7,6 @@
 
 import Foundation
 
-public protocol DapaConfig{
-    static func write(name:String)throws->Dapa
-    static func read(name:String)throws->Dapa
-}
-
-public struct DapaNormalConfig:DapaConfig{
-    public static func write(name: String) throws -> Dapa {
-        try Dapa(name: name)
-    }
-    
-    public static func read(name: String) throws -> Dapa {
-        try Dapa(name: name, readonly: true)
-    }
-    
-    
-}
 
 final public class DapaNormalQueue:DapaQueue<DapaNormalConfig>{}
 
