@@ -34,10 +34,7 @@ extension Dapa{
                 let dbstr = (db != nil) ? String(cString: db!): ""
                 let tbstr = (tb != nil) ? String(cString: tb!): ""
                 ob.observerCallback(ev,dbstr,tbstr,rowid)
-            }, Unmanaged<Observer>.passRetained(self).toOpaque())
-        }
-        public func close(){
-            Unmanaged<Observer>.passRetained(self).release()
+            }, Unmanaged<Observer>.passUnretained(self).toOpaque())
         }
     }
 }

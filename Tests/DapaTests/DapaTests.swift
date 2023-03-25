@@ -28,7 +28,6 @@ final class DapaTests: XCTestCase {
             mem.remark = "remark \(i)"
             mem.avatar = "avatar \(i)"
             try mem.insert(db: db)
-            ob.close()
             var onl = MemberOnline()
             onl.domain = mem.domain
             onl.online = (i % 2 == 0 ? 1 : 0)
