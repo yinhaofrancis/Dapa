@@ -12,6 +12,10 @@ let package = Package(
             name: "Dapa",
             type: .dynamic,
             targets: ["Dapa"]),
+        .library(
+            name: "Coke",
+            type: .dynamic,
+            targets: ["Coke"]),
     ],
     dependencies: [
         // Dependencies declare other packages that this package depends on.
@@ -22,6 +26,9 @@ let package = Package(
         // Targets can depend on other targets in this package, and on products in packages this package depends on.
         .target(
             name: "Dapa",
+            dependencies: []),
+        .target(
+            name: "Coke",
             dependencies: []),
         .testTarget(
             name: "DapaTests",
