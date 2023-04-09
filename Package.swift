@@ -5,7 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "Dapa",
-    platforms: [.iOS(.v13)],
+    platforms: [.iOS(.v13),.macOS(.v11)],
     products: [
         // Products define the executables and libraries a package produces, and make them visible to other packages.
         .library(
@@ -13,9 +13,9 @@ let package = Package(
             type: .dynamic,
             targets: ["Dapa"]),
         .library(
-            name: "Coke",
+            name: "Post",
             type: .dynamic,
-            targets: ["Coke"]),
+            targets: ["Post"]),
     ],
     dependencies: [
         // Dependencies declare other packages that this package depends on.
@@ -28,7 +28,7 @@ let package = Package(
             name: "Dapa",
             dependencies: []),
         .target(
-            name: "Coke",
+            name: "Post",
             dependencies: []),
         .testTarget(
             name: "DapaTests",
