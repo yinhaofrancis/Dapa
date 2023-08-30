@@ -637,7 +637,7 @@ extension Dapa{
     /// 注册数据库函数
     /// - Parameter function: 数据库函数
     public func registerFunction(function:Funtion){
-        if function.xFunc != nil{
+        if function.xStep == nil || function.xFinal == nil { // Scale Function
             sqlite3_create_function_v2(self.sqlite, function.name, function.nArg, SQLITE_UTF8, Unmanaged<Funtion>.passRetained(function).toOpaque(), { ctx, n, params in
                 let df = Unmanaged<Funtion>.fromOpaque(sqlite3_user_data(ctx))
                 df.takeUnretainedValue().xFunc?(FunctionContext(ctx: ctx!),Dapa.makeParam(n: n, param: params))
@@ -646,7 +646,10 @@ extension Dapa{
                 Unmanaged<Funtion>.fromOpaque(point).release()
             })
         }else{
-            sqlite3_create_function_v2(self.sqlite, function.name, function.nArg, SQLITE_UTF8, Unmanaged<Funtion>.passRetained(function).toOpaque(), nil, { ctx, n, params in
+            sqlite3_create_function_v2(self.sqlite, function.name, function.nArg, SQLITE_UTF8, Unmanaged<Funtion>.passRetained(function).toOpaque(), { ctx, n, params in
+                let df = Unmanaged<Funtion>.fromOpaque(sqlite3_user_data(ctx))
+                df.takeUnretainedValue().xFunc?(FunctionContext(ctx: ctx!),Dapa.makeParam(n: n, param: params))
+            }, { ctx, n, params in
                 let df = Unmanaged<Funtion>.fromOpaque(sqlite3_user_data(ctx))
                 df.takeUnretainedValue().xStep?(FunctionContext(ctx: ctx!),Dapa.makeParam(n: n, param: params))
             },{ctx in
